@@ -1,10 +1,11 @@
 ARG CI_REGISTRY_IMAGE
 ARG TAG
+ARG APP_NAME
 ARG DOCKERFS_TYPE
 ARG DOCKERFS_VERSION
-ARG JUPYTERLAB_DESKTOP_VERSION
-FROM ${CI_REGISTRY_IMAGE}/${DOCKERFS_TYPE}:${DOCKERFS_VERSION}${TAG} AS base
+FROM ${CI_REGISTRY_IMAGE}/${DOCKERFS_TYPE}:${DOCKERFS_VERSION}${TAG}
 LABEL maintainer="paoloemilio.mazzon@unipd.it"
+
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG CARD
@@ -12,45 +13,48 @@ ARG TAG
 ARG CI_REGISTRY
 ARG APP_NAME
 ARG APP_VERSION
+ARG APP_VERSION_FULL="${APP_VERSION}-20240422"
 
 LABEL app_version=$APP_VERSION
 LABEL app_tag=$TAG
 
 WORKDIR /apps/${APP_NAME}
-
-ARG ANTS_VERSION=2.5.3
 RUN apt-get update && \
-    apt-get install --no-install-recommends -y bc unzip wget && \ 
-    cd /opt && \
-    wget https://github.com/ANTsX/ANTs/releases/download/v${ANTS_VERSION}/ants-${ANTS_VERSION}-ubuntu-22.04-X64-gcc.zip && \
-    unzip ants-${ANTS_VERSION}-ubuntu-22.04-X64-gcc.zip && \
-    mv ants-${ANTS_VERSION} ants && \
-    rm -f ants-${ANTS_VERSION}-ubuntu-22.04-X64-gcc.zip && \
-    apt-get purge -y unzip wget && \
-    apt-get clean && \
-    apt-get -y autoremove && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    apt-get upgrade -y && \
+    apt-get install --no-install-recommends -y \
+        ca-certificates \
+        curl \
+        libfontconfig1 \
+        libxcb-icccm4 \
+        libxcb-image0 \
+        libxcb-keysyms1 \
+        libxcb-render-util0 \
+        libxcb-shape0 \
+        libxkbcommon-x11-0 \
+        libxkbcommon0 && \
+        cd /var/cache/ && \
+        curl -sSL -o itksnap-${APP_VERSION_FULL}.tgz https://sourceforge.net/projects/itk-snap/files/itk-snap/${APP_VERSION}/itksnap-${APP_VERSION_FULL}-Linux-gcc64.tar.gz/download && \
+        tar -xvzf itksnap-${APP_VERSION_FULL}.tgz && \
+        mv itksnap-${APP_VERSION_FULL}-Linux-gcc64/* /apps/${APP_NAME} && \
+        rmdir itksnap-${APP_VERSION_FULL}-Linux-gcc64 && cd / && apt-get -y --purge autoremove
 
-# the below needs to go on the user environment so
-# an external .bash_profile is filled with these
-# we leave them here as a reference from the ANTs Dockerfile
-ARG LD_LIBRARY_PATH
-ENV PATH="/opt/ants/bin:$PATH" \
-    LD_LIBRARY_PATH="/opt/ants/lib:$LD_LIBRARY_PATH"
+ARG TAG
+ARG CARD
+ARG APP_NAME
+ARG APP_VERSION
 
-LABEL org.opencontainers.image.authors="ANTsX team" \
-      org.opencontainers.image.url="https://stnava.github.io/ANTs/" \
-      org.opencontainers.image.source="https://github.com/ANTsX/ANTs" \
-      org.opencontainers.image.licenses="Apache License 2.0" \
-      org.opencontainers.image.title="Advanced Normalization Tools" \
-      org.opencontainers.image.description="ANTs is part of the ANTsX ecosystem (https://github.com/ANTsX). \
-ANTs Citation: https://pubmed.ncbi.nlm.nih.gov/24879923"
+LABEL app_version=$APP_VERSION
+LABEL app_tag=$TAG
+ENV PATH=$PATH:/apps/${APP_NAME}/bin
 
-ENV APP_SPECIAL="terminal"
-ENV APP_CMD=""
-ENV PROCESS_NAME=""
+WORKDIR /apps/${APP_NAME}
+
+ENV APP_SPECIAL=""
+ENV APP_CMD="/apps/${APP_NAME}/bin/itksnap"
+ENV PROCESS_NAME="itksnap"
 ENV APP_DATA_DIR_ARRAY=""
 ENV DATA_DIR_ARRAY=""
+ENV CONFIG_ARRAY=""
 
 HEALTHCHECK --interval=10s --timeout=10s --retries=5 --start-period=30s \
   CMD sh -c "/apps/${APP_NAME}/scripts/process-healthcheck.sh \
