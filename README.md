@@ -1,6 +1,6 @@
-# ANTs
+# itk-SNAP
 
-This integrates ANTs (https://stnava.github.io/ANTs/) into the HIP.
+This integrates itk-SNAP ([http://www.itksnap.org/pmwiki/pmwiki.php?n=Main.HomePage]) into the HIP.
 
 ## Acknowledgement
 
