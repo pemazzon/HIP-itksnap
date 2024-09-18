@@ -1,4 +1,4 @@
-# itk-SNAP
+## itk-SNAP
 
 This integrates itk-SNAP (http://www.itksnap.org/pmwiki/pmwiki.php?n=Main.HomePage) into the HIP.
 
